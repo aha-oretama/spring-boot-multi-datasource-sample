@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    primary:
+      driver-class-name:  net.sf.log4jdbc.DriverSpy
+      url:                jdbc:log4jdbc:h2:./.data/h2/db:MODE=PostgreSQL
+      username:           sa
+      password:
+    secondary:
+      driver-class-name:  net.sf.log4jdbc.DriverSpy
+      url:                jdbc:log4jdbc:hsqldb:file:./.data/hsqldb/db;shutdown=true
+      username:           sa
+      password:
+  jpa:
+    hibernate:
+      ddl-auto: none
