@@ -2,17 +2,15 @@ package aha.oretama.jp.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.flyway.FlywayDataSource;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -40,41 +38,26 @@ public class PrimaryDataSourceConfiguration {
   @Autowired
   public DataSource primaryDataSource(@Qualifier("primaryProperties")
       DataSourceProperties properties) {
-    return createDataSource(properties);
+    return properties.initializeDataSourceBuilder().build();
   }
 
   @Bean
   @Primary
   @Autowired
-  public LocalContainerEntityManagerFactoryBean primaryEntityManager(@Qualifier("primaryDataSource") DataSource dataSource) {
-    LocalContainerEntityManagerFactoryBean entityManager = new LocalContainerEntityManagerFactoryBean();
-    entityManager.setDataSource(dataSource);
-    entityManager.setPackagesToScan(new String[] {"aha.oretama.jp.entity.primary"});
-
-    HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-    entityManager.setJpaVendorAdapter(vendorAdapter);
-
-    return entityManager;
+  public LocalContainerEntityManagerFactoryBean primaryEntityManager(EntityManagerFactoryBuilder builder,@Qualifier("primaryDataSource") DataSource dataSource){
+    return builder.dataSource(dataSource)
+        .packages("aha.oretama.jp.entity.primary")
+        .persistenceUnit("primary")
+        .build();
   }
+
 
   @Bean
   @Primary
   @Autowired
-  public PlatformTransactionManager primaryTransactionManager(@Qualifier("primaryEntityManager") LocalContainerEntityManagerFactoryBean primaryEntityManager) {
+  public JpaTransactionManager primaryTransactionManager(@Qualifier("primaryEntityManager") LocalContainerEntityManagerFactoryBean primaryEntityManager) {
     JpaTransactionManager transactionManager = new JpaTransactionManager();
     transactionManager.setEntityManagerFactory(primaryEntityManager.getObject());
     return transactionManager;
   }
-
-  private DataSource createDataSource(DataSourceProperties properties){
-    return DataSourceBuilder
-        .create()
-        .driverClassName(properties.getDriverClassName())
-        .url(properties.getUrl())
-        .username(properties.getUsername())
-        .password(properties.getPassword())
-        .build();
-
-  }
-
 }
